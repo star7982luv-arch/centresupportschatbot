@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centre Supports Chatbot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f2f5;
+    --header-bg: #2c3e50;
+    --user-bubble: #4169e1;
+    --bot-bubble: #e4e6ea;
+    --bot-text: #1a1a1a;
+    --user-text: #ffffff;
+    --input-bg: #ffffff;
+    --border: #cdd1d8;
+    --send-btn: #4169e1;
+    --timestamp: #888;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .chat-window {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    max-height: 700px;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    background: var(--header-bg);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .bot-avatar {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #4169e1, #6a9fd8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .header-info h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .header-info p {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 2px;
+  }
+
+  .messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+
+  .messages-area::-webkit-scrollbar { width: 4px; }
+  .messages-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+  .msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    animation: fadeUp 0.25s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .bubble.bot {
+    background: var(--bot-bubble);
+    color: var(--bot-text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble.user {
+    background: var(--user-bubble);
+    color: var(--user-text);
+    border-bottom-right-radius: 4px;
+  }
+
+  .bubble a {
+    color: inherit;
+    text-decoration: underline;
+    word-break: break-all;
+  }
+
+  .mini-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4169e1, #6a9fd8);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    background: white;
+  }
+
+  #userInput {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #userInput:focus { border-color: var(--user-bubble); }
+
+  #sendBtn {
+    background: var(--send-btn);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+
+  #sendBtn:hover { background: #2a50c0; }
+  #sendBtn:active { transform: scale(0.93); }
+
+  .msg-count {
+    font-size: 11px;
+    color: var(--timestamp);
+    text-align: right;
+    padding: 0 16px 6px;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="chat-window">
+  <div class="chat-header">
+    <div class="bot-avatar">💬</div>
+    <div class="header-info">
+      <h1>Centre Supports Chatbot</h1>
+      <p>Community resources for Centre County</p>
+    </div>
+  </div>
+
+  <div class="messages-area" id="messagesArea"></div>
+  <div class="msg-count" id="msgCount">0 messages</div>
+
+  <div class="input-row">
+    <input type="text" id="userInput" placeholder="Type a message…" autocomplete="off" />
+    <button id="sendBtn" title="Send">➤</button>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const QUIT_LIST = ['bye','quit'];
+const HOME_URL  = 'https://spookybutterfly.github.io/centresupports/index.html';
+
+const agingList    = ['aging','age','senior','seniors','elderly','retirement','retiree','older','nurse','old'];
+const agingSpecific= ['acap','eagle valley','the village','rsvp','retired'];
+
+const youthList    = ['child','children','youth','kids','young','adolescent','juvenile','teen','childcare','baby','babies','daycare','grand'];
+const youthSpecific= ['childspace','ymca','bureau','united way','key'];
+
+const foodList     = ['food','meal','meals','nutrition','groceries','pantry','kitchen','hunger','hungry','stomach','restaurant'];
+const foodSpecific = ['food bank','faith','action','cpca','commonfood','lion','pantry'];
+
+const substanceList= ['drugs','drug','substance','help','narcotics','remission','recovery'];
+const substanceSpec= ['joseph','applegate','crossroads','inc','pinnacle'];
+
+const transpoList  = ['transport','transportation','bus','buses','car','ride','transit','commute'];
+const transpoSpec  = ['cata','greyhound','megabus','active'];
+
+const hotlineList  = ['suicide','intervention','prevention','help','helpline','support','hotline'];
+const hotlineSpec  = ['safe','988','crisis','assault','violence','centre safe'];
+
+const clothingList = ['clothing','clothes','attire','shirt','pants','shoes'];
+const clothingSpec = ['vincent','mommy','goodwill','salvation','army','peace'];
+
+const financeList  = ['employment','job','jobs','career','work','finance','money','income'];
+const financeSpec  = ['crog','crcog','careerlink','interfaith','liheap','skills'];
+
+const healthList   = ['physical','health','healthcare','fitness','hospital','medical','medicine','wellness','doctor','medics','dental','teeth','back','pain','hurt','heart'];
+const healthSpec   = ['cvim','public','nittany','orthodontics','orthodontist','pregnancy','clinic'];
+
+const housingList  = ['housing','house','home','apartment','rent','rental','lease','shelter'];
+const housingSpec  = ['out of the cold','transitions','land trust','authority'];
+
+const mentalList   = ['mental','mind','psychological','therapy','psychology','treatment','wellness','awareness','sad','depression','anxiety','alone'];
+const mentalSpec   = ['jana marie','community','mental illness','nami','psychiatry'];
+
+const volunteerList= ['volunteer','volunteering','community','service','hours'];
+const volunteerSpec= ['discovery space','schlow','library','centre care','pvca','environment','aauw','summer'];
+
+const overall = [
+  ...agingSpecific, ...youthSpecific, ...foodSpecific, ...substanceSpec,
+  ...transpoSpec,   ...hotlineSpec,   ...clothingSpec, ...financeSpec,
+  ...healthSpec,    ...housingSpec,   ...mentalSpec,   ...volunteerSpec
+];
+
+const schedules = {
+  aging:     "Office of Aging & The Village: 8:30 AM–5:00 PM | Eagle Valley: 7:30 AM–9:00 PM | ACAP: 5:30 PM–7:00 PM | RSVP: 9:00 AM–5:00 PM | Senior Centers: 9:00 AM–3:00 PM",
+  youth:     "Childspace/Children & Youth Services: 8:00 AM–5:00 PM | YMCA: 5:30 AM–9:00 PM | Youth Service Bureau: 8:30 AM–5:00 PM | United Way: 10:00 AM–4:00 PM",
+  food:      "Food Bank: 9:00 AM–4:00 PM | Faith Centre: 10:00 AM–2:00 PM | CPCA: 8:30 AM–4:30 PM | Commonfood: 11:00 AM–1:00 PM | Lion's Pantry: 10:00 AM–3:00 PM",
+  substance: "Applegate Recovery: 8:30 AM–4:30 PM | CC Drug & Alcohol: 8:00 AM–5:00 PM | Crossroads Counseling: 9:00 AM–2:00 PM | Pinnacle Treatment: 5:45 AM–12:00 PM | St. Joseph Counseling: 24/7",
+  transpo:   "CATA Offices: 7:00 AM–6:00 PM | CC Transportation Office & Megabus: 8:00 AM–5:00 PM | Greyhound Busing: 9:00 AM–6:00 PM | CCATP: 8:30 AM–5:00 PM",
+  hotline:   "Centre Safe: 9:00 AM–5:00 PM | 988 Suicide Crisis Line: 24/7 | Centre County Crisis Line: 24/7 | CCATP: 24/7",
+  clothing:  "Goodwill: 10:00 AM–7:00 PM | Salvation Army: 9:00 AM–5:00 PM | Centre Peace: 9:00 AM–4:00 PM | The Mommy Shoppe: 11:00 AM–2:00 PM | St. Vincent DePaul: 10:00 AM–4:00 PM",
+  finance:   "CRCOG & LIHEAP: 8:00 AM–5:00 PM | PA Careerlink: 8:00 AM–4:30 PM | Interfaith: 9:00 AM–4:00 PM | Skills of Central PA: 8:00 AM–4:00 PM",
+  health:    "CVIM: 8:00 AM–4:00 PM | Mount Nittany Health: 9:00 AM–5:00 PM | SC Public Health: 8:00 AM–4:30 PM | SC Orthodontics: 7:40 AM–4:40 PM | Pregnancy Resource Clinic: 9:00 AM–12:00 PM | Adult Transitional Care: 24/7",
+  housing:   "Out of the Cold: 8:00 AM–8:00 PM | Housing Transitions: 9:00 AM–4:00 PM | Centre County Housing: 8:30 AM–5:00 PM | SC Community Land Trust: 10:00 AM–2:00 PM | CC Housing Authority: 8:00 AM–4:00 PM",
+  mental:    "Jana Marie Foundation & Mental Peace Psychiatry: 8:30 AM–5:00 PM | Center for Community Resources: 6:00 AM–12:00 AM | NAMI: 10:00 AM–10:00 PM | CC Mental Health: 24/7 | Anxiety & Depression Aid: 9:30 AM–11:00 AM",
+  volunteer: "Discovery Space: 9:00 AM–5:00 PM | Schlow Library: 9:00 AM–6:00 PM | Centre Care: 24/7 | PVCA Environmental Educators: 20 hrs/week | Jana Marie Summer Camps: 8:30 AM–2:00 PM | AAUW Book Drive: 9:00 AM–2:30 PM"
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let waitingForResource = false;
+let waitingForSchedule = false;
+let messageCount = 0;
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+const area    = document.getElementById('messagesArea');
+const counter = document.getElementById('msgCount');
+const input   = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+function linkify(text) {
+  return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+}
+
+function addMessage(text, who) {
+  messageCount++;
+  counter.textContent = messageCount + ' message' + (messageCount !== 1 ? 's' : '');
+
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + who;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + who;
+  bubble.innerHTML = linkify(text);
+
+  if (who === 'bot') {
+    const av = document.createElement('div');
+    av.className = 'mini-avatar';
+    av.textContent = '💬';
+    row.appendChild(av);
+  }
+  row.appendChild(bubble);
+
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+// ── Logic ─────────────────────────────────────────────────────────────────────
+function containsAny(msg, list) {
+  return list.some(w => msg.includes(w.toLowerCase()));
+}
+
+function findSpecific(msg, list) {
+  // Return the longest matching keyword to avoid short words (e.g. 'faith')
+  // swallowing longer phrases (e.g. 'faith centre'), and to avoid false
+  // positives from ambiguous short entries like 'safe', 'army', 'public'.
+  const matches = list.filter(w => msg.includes(w.toLowerCase()));
+  if (!matches.length) return null;
+  return matches.reduce((a, b) => b.length > a.length ? b : a);
+}
+
+function scheduleFor(resource) {
+  const r = resource.toLowerCase();
+  if (agingSpecific.some(x => r.includes(x)))    return schedules.aging;
+  if (youthSpecific.some(x => r.includes(x)))    return schedules.youth;
+  if (foodSpecific.some(x => r.includes(x)))     return schedules.food;
+  if (substanceSpec.some(x => r.includes(x)))    return schedules.substance;
+  if (transpoSpec.some(x => r.includes(x)))      return schedules.transpo;
+  if (hotlineSpec.some(x => r.includes(x)))      return schedules.hotline;
+  if (clothingSpec.some(x => r.includes(x)))     return schedules.clothing;
+  if (financeSpec.some(x => r.includes(x)))      return schedules.finance;
+  if (healthSpec.some(x => r.includes(x)))       return schedules.health;
+  if (housingSpec.some(x => r.includes(x)))      return schedules.housing;
+  if (mentalSpec.some(x => r.includes(x)))       return schedules.mental;
+  if (volunteerSpec.some(x => r.includes(x)))    return schedules.volunteer;
+  return null;
+}
+
+function handleResource(msg) {
+  let responded = false;
+
+  if (containsAny(msg, agingList)) {
+    addMessage("Centre Supports has various aging resources. Are you looking for the Centre County Office of Aging, Eagle Valley, The Village, ACAP, RSVP, or the Centre County Senior Centers?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, youthList)) {
+    addMessage("Centre Supports has various youth resources. Are you looking for Childspace, YMCA, The Youth Service Bureau, United Way, The PA Key, or Children & Youth Services?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, foodList)) {
+    addMessage("Centre Supports has various food resources. Are you looking for the Food Bank, Faith Centre, CPCA, Commonfood, or the Lion's Pantry?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, substanceList)) {
+    addMessage("Centre Supports has various substance abuse resources. Are you looking for Applegate Recovery, CC Drug & Alcohol, Crossroads Counseling, Pinnacle Treatment, or St. Joseph Counseling?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, transpoList)) {
+    addMessage("Centre Supports has various transportation resources. Are you looking for CATA bus, the Transportation Office, Greyhound, Megabus, or CCATP?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, hotlineList)) {
+    addMessage("Centre Supports has various crisis & hotline resources. Are you looking for Centre Safe, 988 Suicide Prevention, Centre County Crisis, or Assault and Relationship Violence Help?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, clothingList)) {
+    addMessage("Centre Supports has various clothing resources. Are you looking for Goodwill, the Salvation Army, Centre Peace, The Mommy Shoppe, or St. Vincent DePaul Thrift Store?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, financeList)) {
+    addMessage("Centre Supports has various finance & employment resources. Are you looking for CRCOG Employment, PA Careerlink, Interfaith Human Services, LIHEAP, or Skills of Central PA?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, healthList)) {
+    addMessage("Centre Supports has various health resources. Are you looking for CVIM, Mount Nittany Health, SC Public Health Division, SC Orthodontics, the Pregnancy Resource Clinic, or Adult Transitional Care?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, housingList)) {
+    addMessage("Centre Supports has various housing resources. Are you looking for Out of the Cold, Housing Transitions, Centre County Housing, SC Community Land Trust, or Centre County Housing Authority?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, mentalList)) {
+    addMessage("Centre Supports has various mental health resources. Are you looking for the Jana Marie Foundation, Center for Community Resources, NAMI, CC Mental Health, Anxiety & Depression Aid, or Mental Peace Psychiatry?", 'bot');
+    responded = true;
+  }
+  if (containsAny(msg, volunteerList)) {
+    addMessage("Centre Supports has various volunteering resources. Are you looking for Discovery Space, Schlow Library, Centre Care, PVCA Environmental Educators, Jana Marie Summer Camps, or the AAUW Book Drive?", 'bot');
+    responded = true;
+  }
+
+  // Check specific named resources
+  const specific = findSpecific(msg, overall);
+  if (specific) {
+    addMessage("You can find more information about '" + specific + "' on the Centre Supports website!", 'bot');
+    responded = true;
+  }
+
+  if (!responded) {
+    addMessage("I'm not sure what you're looking for! Try typing a category like 'food', 'housing', 'mental health', 'clothing', 'transportation', etc. — or type 'resources' or 'schedules' to get started.", 'bot');
+  }
+}
+
+function processMessage(raw) {
+  const msg = raw.trim();
+  if (!msg) return;
+
+  addMessage(msg, 'user');
+  const lower = msg.toLowerCase();
+
+  // Quit
+  if (QUIT_LIST.some(q => lower.includes(q))) {
+    addMessage("Goodbye! Get back home: " + HOME_URL, 'bot');
+    return;
+  }
+
+  // Trigger resource flow
+  if (lower === 'resources') {
+    waitingForResource = true;
+    addMessage("What category of resource would you like?", 'bot');
+    return;
+  }
+
+  // Inside resource flow
+  if (waitingForResource) {
+    waitingForResource = false;
+    handleResource(lower);
+    return;
+  }
+
+  // Trigger schedule flow
+  if (lower.includes('schedules') || lower.includes('schedule')) {
+    waitingForSchedule = true;
+    addMessage("Which resource would you like a schedule for?", 'bot');
+    return;
+  }
+
+  // Inside schedule flow
+  if (waitingForSchedule) {
+    waitingForSchedule = false;
+    const matches = overall.filter(r => lower.includes(r.toLowerCase()));
+    const matched = matches.length ? matches.reduce((a, b) => b.length > a.length ? b : a) : null;
+    if (matched) {
+      const sched = scheduleFor(matched);
+      if (sched) {
+        addMessage("The schedule for that resource is: " + sched, 'bot');
+      } else {
+        addMessage("Sorry, I couldn't find a schedule for that resource.", 'bot');
+      }
+    } else {
+      addMessage("I couldn't find that resource. Please try a specific name like 'CATA', 'YMCA', 'food bank', etc.", 'bot');
+    }
+    return;
+  }
+
+  // Try to match a category or specific resource directly — works anytime, not just after 'resources'
+  handleResource(lower);
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+sendBtn.addEventListener('click', () => {
+  processMessage(input.value);
+  input.value = '';
+  input.focus();
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    processMessage(input.value);
+    input.value = '';
+  }
+});
+
+// ── Boot messages ─────────────────────────────────────────────────────────────
+addMessage("Hi, I'm the Centre Supports Chatbot! Would you like to search for 'resources' or 'schedules'?", 'bot');
+addMessage("Type 'quit' or 'bye' to exit.", 'bot');
+</script>
+</body>
+</html>
